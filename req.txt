@@ -1,0 +1,13 @@
+langchain
+langchain-ollama
+langchain-openai
+langchain-core
+ollama
+openai
+streamlit
+gradio
+langsmith
+python-dotenv
+langchain-community
+pypdf
+langchain-chroma
