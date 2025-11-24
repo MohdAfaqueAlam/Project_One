@@ -88,7 +88,7 @@ with gr.Blocks() as demo:
     gr.Markdown("### 👋 Hello, I am **HistoryBot**, your expert on historical figures. How can I assist you today?")
     session_id = gr.State(value="default")
     chatbot = gr.Textbox(label="Your Question")
-    output = gr.Textbox(label="HistoryBot's Answer")
+    output = gr.Textbox(label="HistoryBot's Answer", lines=10, max_lines=20, scale=2)
     submit_btn = gr.Button("Submit")
     clear_btn = gr.Button("Clear History")
 
