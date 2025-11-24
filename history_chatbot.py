@@ -1,4 +1,4 @@
-import os
+# imports
 import gradio as gr
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
