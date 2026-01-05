@@ -1,0 +1,41 @@
+{
+    "Dicrectory_Name": "Student_Directory",
+    "Students": [
+        {
+            "student1": {
+                "Name": "Mohd Alam",
+                "Age": 20,
+                "isStudent": false,
+                "skills": [
+                    "Java",
+                    "Python",
+                    "Angular"
+                ],
+                "Address": {
+                    "Village": "Gaiyari",
+                    "Locality": "Ward No 14",
+                    "City": "Araria",
+                    "State": "Bihar",
+                    "PIN Code": 854311
+                }
+            },
+            "student2": {
+                "Name": "Ashraf Alam",
+                "Age": 25,
+                "isStudent": true,
+                "skills": [
+                    "Java",
+                    "Python",
+                    "Angular"
+                ],
+                "Address": {
+                    "Village": "Sisauna",
+                    "Locality": "Ward No 04",
+                    "City": "Araria",
+                    "State": "Bihar",
+                    "PIN Code": 854311
+                }
+            }
+        }
+    ]
+}

@@ -11,3 +11,5 @@ python-dotenv
 langchain-community
 pypdf
 langchain-chroma
+youtube-transcript-api
+duckduckgo-search
