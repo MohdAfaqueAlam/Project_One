@@ -1,0 +1,231 @@
+import gradio as gr
+from dotenv import load_dotenv
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import CharacterTextSplitter
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_classic.chains import RetrievalQA
+from langchain_core.prompts import PromptTemplate
+from langchain_core.chat_history import InMemoryChatMessageHistory
+from langsmith import traceable
+import os
+import shutil
+
+# --- Load environment variables ---
+load_dotenv()
+
+# --- Delete old vector store if it exists ---
+vector_store_path = "historical_figures_vector_store_test"
+if os.path.exists(vector_store_path):
+    shutil.rmtree(vector_store_path)
+    print(f"Deleted old vector store: {vector_store_path}")
+
+# --- PDF Ingestion ---
+loader = PyPDFLoader("Notable_Historical_Figures.pdf")
+documents = loader.load()
+
+splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=30)
+docs = splitter.split_documents(documents)
+
+# --- Vector Store ---
+embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+vectorstore = Chroma(
+    collection_name="historical_figures_test",
+    embedding_function=embedding,
+    persist_directory=vector_store_path
+)
+vectorstore.add_documents(docs)
+
+# --- LLM Setup ---
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
+# --- Prompt Template ---
+prompt_template = PromptTemplate.from_template(
+    """You are HistoryBot, an expert on historical figures.
+Use the following context to answer the question.
+If you don't know the answer, say you don't know.
+
+Context:
+{context}
+
+Question: {question}
+Answer:"""
+)
+
+# --- RetrievalQA Chain ---
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=vectorstore.as_retriever(),
+    chain_type="stuff",
+    chain_type_kwargs={"prompt": prompt_template},
+    return_source_documents=False
+)
+
+# --- Memory Setup ---
+chat_histories = {}
+
+def get_history(session_id: str) -> InMemoryChatMessageHistory:
+    if session_id not in chat_histories:
+        chat_histories[session_id] = InMemoryChatMessageHistory()
+    return chat_histories[session_id]
+
+# --- Chat Interface Function ---
+@traceable(name="HistoryBot Chat")
+def chat_interface(message, history, session_id):
+    """Handle chat messages and return updated history"""
+    try:
+        # Save message to memory
+        chat_history = get_history(session_id)
+        chat_history.add_user_message(message)
+
+        # Get response from QA chain
+        response = qa_chain.run(message)
+
+        # Save response to memory
+        chat_history.add_ai_message(response)
+
+        # Update chat history for display
+        history.append((message, response))
+        return history, ""
+    except Exception as e:
+        error_msg = f"❌ Error: {str(e)}"
+        history.append((message, error_msg))
+        return history, ""
+
+def clear_chat(session_id):
+    """Clear chat history"""
+    chat_histories.pop(session_id, None)
+    return [], ""
+
+# --- Custom CSS ---
+custom_css = """
+#header {
+    text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+#header h1 {
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+#header p {
+    margin: 10px 0 0 0;
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+#chatbot-container {
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+.message-wrap {
+    padding: 10px !important;
+}
+
+#examples {
+    margin-top: 20px;
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    color: #666;
+}
+"""
+
+# --- Gradio UI ---
+with gr.Blocks(css=custom_css, theme=gr.themes.Soft()) as demo:
+    # Header
+    with gr.Row(elem_id="header"):
+        gr.Markdown(
+            """
+            # 📚 HistoryBot
+            ### Your AI Expert on Historical Figures
+            Ask me anything about notable people from history!
+            """
+        )
+    
+    # Session ID (hidden state)
+    session_id = gr.State(value="default")
+    
+    # Main Chat Interface
+    with gr.Row():
+        with gr.Column(scale=1):
+            chatbot = gr.Chatbot(
+                value=[],
+                elem_id="chatbot-container",
+                height=500,
+                show_label=False,
+                avatar_images=(None, "🤖"),
+                bubble_full_width=False
+            )
+            
+            with gr.Row():
+                msg = gr.Textbox(
+                    placeholder="Type your question about historical figures here...",
+                    show_label=False,
+                    scale=4,
+                    container=False
+                )
+                submit_btn = gr.Button("Send 📤", scale=1, variant="primary")
+            
+            with gr.Row():
+                clear_btn = gr.Button("🗑️ Clear Chat", scale=1, variant="secondary")
+                
+    # Example Questions
+    with gr.Row(elem_id="examples"):
+        gr.Examples(
+            examples=[
+                "Who was Leonardo da Vinci?",
+                "Tell me about Cleopatra's reign",
+                "What were Albert Einstein's major contributions?",
+                "When did William Shakespeare live?",
+                "What was Marie Curie known for?"
+            ],
+            inputs=msg,
+            label="💡 Example Questions"
+        )
+    
+    # Footer
+    gr.Markdown(
+        """
+        ---
+        <div style='text-align: center; color: #666; padding: 20px;'>
+            <p>Powered by OpenAI GPT-4 | Built with LangChain & Gradio</p>
+        </div>
+        """,
+        elem_id="footer"
+    )
+    
+    # Event Handlers
+    submit_btn.click(
+        fn=chat_interface,
+        inputs=[msg, chatbot, session_id],
+        outputs=[chatbot, msg]
+    )
+    
+    msg.submit(
+        fn=chat_interface,
+        inputs=[msg, chatbot, session_id],
+        outputs=[chatbot, msg]
+    )
+    
+    clear_btn.click(
+        fn=clear_chat,
+        inputs=[session_id],
+        outputs=[chatbot, msg]
+    )
+
+# --- Run App ---
+if __name__ == "__main__":
+    demo.launch(share=False)

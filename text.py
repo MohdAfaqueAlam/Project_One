@@ -1,6 +1,6 @@
-from langchain import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_core.document_loaders import pyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_classic.chains import RetrievalQA
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- PDF Ingestion ---
-loader = pyPDFLoader("Notable_Historical_Figures.pdf")
+loader = PyPDFLoader("Notable_Historical_Figures.pdf")
 documents = loader.load()
 
 # --- Document Splitting ---
@@ -26,9 +26,9 @@ embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
 # --- Vector Store ---
 
 vectorstore = Chroma(
-    collection_name="historical_figures",
+    collection_name="historical_figures_v3",
     embedding_function=embedding_model,
-    persist_directory="historical_figures_vector_store"
+    persist_directory="historical_figures_vector_store_v3"
 )
 # ---- Document Addition ----
 

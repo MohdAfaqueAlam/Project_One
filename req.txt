@@ -13,3 +13,5 @@ pypdf
 langchain-chroma
 youtube-transcript-api
 duckduckgo-search
+tavily-python
+langchain-perplexity

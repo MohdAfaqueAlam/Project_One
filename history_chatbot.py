@@ -2,8 +2,9 @@
 import gradio as gr
 from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.embeddings import Embeddings
 from langchain_text_splitters import CharacterTextSplitter
-from langchain_ollama.embeddings import OllamaEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_ollama import ChatOllama
 from langchain_classic.chains import RetrievalQA
@@ -25,7 +26,7 @@ splitter = CharacterTextSplitter(chunk_size=200, chunk_overlap=30)
 docs = splitter.split_documents(documents)
 
 # --- Vector Store ---
-embedding = OllamaEmbeddings(model="all-minilm")
+embedding = OpenAIEmbeddings(model="text-embedding-3-small")
 vectorstore = Chroma(
     collection_name="historical_figures_test",
     embedding_function=embedding,
@@ -34,7 +35,7 @@ vectorstore = Chroma(
 vectorstore.add_documents(docs)
 
 # --- LLM Setup ---
-llm = ChatOllama(model="llama3.2:latest")
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # --- Prompt Template ---
 prompt_template = PromptTemplate.from_template(
