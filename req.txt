@@ -15,3 +15,5 @@ youtube-transcript-api
 duckduckgo-search
 tavily-python
 langchain-perplexity
+requests
+spotipy
