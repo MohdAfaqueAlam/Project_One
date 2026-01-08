@@ -24,11 +24,6 @@ from spotipy.oauth2 import SpotifyOAuth
 import json
 
 # Your credentials from the Spotify Developer Dashboard
-CLIENT_ID = '87793129d56f45fab6546f9fe0b735a0'
-CLIENT_SECRET = '24635e683d784a289731b3f07c335338'
-REDIRECT_URI = 'https://localhost:8000/callback'  # Make sure this matches the Redirect URI in your Spotify app settings
-SCOPE = 'user-library-read playlist-modify-public' # Define the level of access you need
-
 # Create a SpotifyOAuth object to handle authentication
 sp_oauth = SpotifyOAuth(client_id=CLIENT_ID,
                         client_secret=CLIENT_SECRET,
